@@ -42,16 +42,16 @@ class KMeans:
             x_0 = []
             x_1 = []
             max_index = np.argmax(distances, axis=1)
-            min_index = np.argmax(distances, axis=1)
+            min_index = np.argmin(distances, axis=1)
 
             for i in range(n):
                 distances[i, max_index[i]] = 0
             for j in range(self.k):
                 for i in range(n):
                     if min_index[i] == j:
-                        if (j==0):
+                        if (j == 0):
                             x_0.append(X_num[i, :])
-                        if (j==1):
+                        if (j == 1):
                             x_1.append(X_num[i, :])
 
             x_0 = np.array(x_0, dtype='float')
@@ -59,9 +59,6 @@ class KMeans:
 
             self.centroids[0, :] = np.mean(x_0, axis=0)
             self.centroids[1, :] = np.mean(x_1, axis=0)
-
-
-
 
 
     def predict(self, X):
@@ -80,8 +77,9 @@ class KMeans:
             there are 3 clusters, then a possible assignment
             could be: array([2, 0, 0, 1, 2, 1, 1, 0, 2, 2])
         """
-        # TODO: Implement 
-        pass
+        # TODO: Implement
+        distances = cross_euclidean_distance(X.to_numpy(), self.centroids)
+        return np.argmin(distances, axis=1)
     
     def get_centroids(self):
         """
