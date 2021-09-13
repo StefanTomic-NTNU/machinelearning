@@ -10,9 +10,10 @@ import random as r
 
 class KMeans:
     
-    def __init__(self, k=2, normalize_points=True, k_means_plus_plus=True):
+    def __init__(self, k=2, normalize_points=True, k_means_plus_plus=True, max_iterations=100):
         # NOTE: Feel free add any hyperparameters
         # (with defaults) as you see fit
+        self.max_iterations = max_iterations
         self.k_means_plus_plus = k_means_plus_plus
         self.normalize_points = normalize_points
         self.centroids = None
@@ -45,8 +46,10 @@ class KMeans:
         # TODO: Implement
         n = X.shape[0]
         if self.normalize_points:
-            X = self.normalize(X)
-        X_num = X.to_numpy()
+            X_norm  = self.normalize(X)
+            X_num = X_norm.to_numpy()
+        else:
+            X_num = X.to_numpy()
 
         if not self.k_means_plus_plus:
             self.centroids = np.zeros((self.k, 2))
@@ -54,33 +57,43 @@ class KMeans:
                 index = np.random.choice(n)
                 self.centroids[j, :] = X_num[index]
         else:
-            # K means++
-            self.centroids = np.zeros((2, 2), dtype='float64')
-            index = np.random.choice(n)
-            self.centroids[0, :] = X_num[index]
-            index = np.random.choice(n)
-            self.centroids[1, :] = X_num[index]
-            # print(self.centroids)
-            for _ in range(2, self.k):
+            # K means++ combined with choosing the centroids with lowest distortion after many iterations
+            # (to avoid getting stuck in local minima)
+            best_centroids = np.copy(self.centroids)
+            min_distortion = np.inf
+            for _ in range(self.max_iterations * 3):
+                self.centroids = np.zeros((2, 2), dtype='float64')
+                index = np.random.choice(n)
+                self.centroids[0, :] = X_num[index]
+                index = np.random.choice(n)
+                self.centroids[1, :] = X_num[index]
                 # print(self.centroids)
-                distances = cross_euclidean_distance(X_num, self.centroids)
-                min_index = np.argmin(distances, axis=1)
-                max_index = None
-                max_distance = 0
-                for i in range(len(min_index)):
-                    dist = distances[i, min_index[i]]
-                    if dist > max_distance:
-                        max_distance = dist
-                        max_index = i
-                self.centroids = np.vstack([self.centroids, X_num[max_index]])
+                for _ in range(2, self.k):
+                    # print(self.centroids)
+                    distances = cross_euclidean_distance(X_num, self.centroids)
+                    min_index = np.argmin(distances, axis=1)
+                    max_index = None
+                    max_distance = 0
+                    for i in range(len(min_index)):
+                        dist = distances[i, min_index[i]]
+                        if dist > max_distance:
+                            max_distance = dist
+                            max_index = i
+                    self.centroids = np.vstack([self.centroids, X_num[max_index]])
+
+                distortion = euclidean_distortion(X_num, self.predict(X_norm))
+                if distortion < min_distortion:
+                    min_distortion = distortion
+                    best_centroids = np.copy(self.centroids)
+
+            self.centroids = np.copy(best_centroids)
 
         # Assigning of clusters
-        for _ in range(20):
-            # print(self.centroids)
-            distances = cross_euclidean_distance(X_num, self.centroids)
-            # print(distances)
+        iterations = 0
 
-            # centroid blir ikke assignet til noen punkter
+        for _ in range(self.max_iterations):
+            iterations += 1
+            distances = cross_euclidean_distance(X_num, self.centroids)
             min_index = np.argmin(distances, axis=1)
 
             count = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -90,10 +103,7 @@ class KMeans:
                     if min_index[i] == j:
                         points.append(X_num[i, :])
                         count[j] += 1
-                # print(points)
-                # print(np.mean(np.array(points, dtype='float64'), axis=0))
                 self.centroids[j, :] = np.mean(np.array(points, dtype='float64'), axis=0)
-            # print(count)
 
         # print(self.centroids)
         if self.normalize_points:
