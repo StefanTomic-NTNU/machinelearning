@@ -5,17 +5,7 @@ import random as r
 # (math, random, collections, functools, etc. are perfectly fine)
 
 
-def normalize(X):
-    X_num = X.to_numpy()
-    X_0_mean = np.mean(X_num[:, 0])
-    X_1_mean = np.mean(X_num[:, 1])
-    X_normalized = np.copy(X)
-    X_normalized[:, 0] -= X_0_mean
-    X_normalized[:, 1] -= X_1_mean
-    X_max = np.amax(X_normalized, axis=0)
-    X_min = np.amin(X_normalized, axis=0)
-    X_normalized[:] /= X_max-X_min
-    return pd.DataFrame(X_normalized, columns=['x0', 'x1'])
+
 
 
 class KMeans:
@@ -26,6 +16,22 @@ class KMeans:
         self.centroids = None
         self.k = k
         self.stretch = stretch
+        self.displacement = None
+        self.ratio = None
+
+    def normalize(self, X):
+        X_num = X.to_numpy()
+        X_0_mean = np.mean(X_num[:, 0])
+        X_1_mean = np.mean(X_num[:, 1])
+        X_normalized = np.copy(X)
+        X_normalized[:, 0] -= X_0_mean
+        X_normalized[:, 1] -= X_1_mean
+        X_max = np.amax(X_normalized, axis=0)
+        X_min = np.amin(X_normalized, axis=0)
+        self.displacement = np.array([X_0_mean, X_1_mean], dtype='float')
+        self.ratio = X_max - X_min
+        X_normalized[:] /= self.ratio
+        return pd.DataFrame(X_normalized, columns=['x0', 'x1'])
 
     def fit(self, X):
         """
@@ -37,6 +43,7 @@ class KMeans:
         """
         # TODO: Implement
         n = X.shape[0]
+        X = self.normalize(X)
         X_num = X.to_numpy()
         # X_num = X.to_numpy()
         # X_0_mean = np.mean(X_num[:, 0])
@@ -53,7 +60,7 @@ class KMeans:
 
 
         # Assigning of clusters
-        for _ in range(10):
+        for _ in range(100):
             distances = cross_euclidean_distance(X_num, self.centroids)
             min_index = np.argmin(distances, axis=1)
 
@@ -63,6 +70,8 @@ class KMeans:
                     if min_index[i] == j:
                         points.append(X_num[i, :])
                 self.centroids[j, :] = np.mean(np.array(points, dtype='float'), axis=0)
+        self.centroids *= self.ratio
+        self.centroids += self.displacement
 
 
     def predict(self, X):
@@ -82,7 +91,12 @@ class KMeans:
             could be: array([2, 0, 0, 1, 2, 1, 1, 0, 2, 2])
         """
         # TODO: Implement
+        self.centroids -= self.displacement
+        self.centroids /= self.ratio
+        X = self.normalize(X)
         distances = cross_euclidean_distance(X.to_numpy(), self.centroids)
+        self.centroids *= self.ratio
+        self.centroids += self.displacement
         return np.argmin(distances, axis=1)
     
     def get_centroids(self):
