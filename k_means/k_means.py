@@ -5,14 +5,28 @@ import random as r
 # (math, random, collections, functools, etc. are perfectly fine)
 
 
+def normalize(X):
+    X_num = X.to_numpy()
+    X_0_mean = np.mean(X_num[:, 0])
+    X_1_mean = np.mean(X_num[:, 1])
+    X_normalized = np.copy(X)
+    X_normalized[:, 0] -= X_0_mean
+    X_normalized[:, 1] -= X_1_mean
+    X_max = np.amax(X_normalized, axis=0)
+    X_min = np.amin(X_normalized, axis=0)
+    X_normalized[:] /= X_max-X_min
+    return pd.DataFrame(X_normalized, columns=['x0', 'x1'])
+
+
 class KMeans:
     
-    def __init__(self, k=2):
+    def __init__(self, k=2, stretch=1):
         # NOTE: Feel free add any hyperparameters
         # (with defaults) as you see fit
         self.centroids = None
         self.k = k
-        
+        self.stretch = stretch
+
     def fit(self, X):
         """
         Estimates parameters for the classifier
@@ -24,41 +38,31 @@ class KMeans:
         # TODO: Implement
         n = X.shape[0]
         X_num = X.to_numpy()
-        self.centroids = None
-        self.centroids = np.zeros((2, self.k))
-        x_1 = np.random.choice(n)
-        x_2 = np.random.choice(n)
-        self.centroids[0, 0] = X['x0'][x_1]
-        self.centroids[0, 1] = X['x1'][x_1]
-        self.centroids[1, 0] = X['x0'][x_2]
-        self.centroids[1, 1] = X['x1'][x_2]
+        # X_num = X.to_numpy()
+        # X_0_mean = np.mean(X_num[:, 0])
+        # X_1_mean = np.mean(X_num[:, 1])
+        # X_normalized = np.copy(X)
+        # X_normalized[:, 0] -= X_0_mean
+        # X_normalized[:, 1] -= X_1_mean
 
-        # i per n
-        # j per k
+        self.centroids = np.zeros((self.k, 2))
+        for j in range(self.k):
+            index = np.random.choice(n)
+            self.centroids[j, :] = X_num[index]
+        print(self.centroids)
+
+
         # Assigning of clusters
-        for _ in range(20):
-            print(self.centroids)
+        for _ in range(10):
             distances = cross_euclidean_distance(X_num, self.centroids)
-            x_0 = []
-            x_1 = []
-            max_index = np.argmax(distances, axis=1)
             min_index = np.argmin(distances, axis=1)
 
-            for i in range(n):
-                distances[i, max_index[i]] = 0
             for j in range(self.k):
+                points = []
                 for i in range(n):
                     if min_index[i] == j:
-                        if (j == 0):
-                            x_0.append(X_num[i, :])
-                        if (j == 1):
-                            x_1.append(X_num[i, :])
-
-            x_0 = np.array(x_0, dtype='float')
-            x_1 = np.array(x_1, dtype='float')
-
-            self.centroids[0, :] = np.mean(x_0, axis=0)
-            self.centroids[1, :] = np.mean(x_1, axis=0)
+                        points.append(X_num[i, :])
+                self.centroids[j, :] = np.mean(np.array(points, dtype='float'), axis=0)
 
 
     def predict(self, X):
