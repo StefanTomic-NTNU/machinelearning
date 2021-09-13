@@ -61,7 +61,10 @@ class KMeans:
             # (to avoid getting stuck in local minima)
             best_centroids = np.copy(self.centroids)
             min_distortion = np.inf
+
+            # Running K means++ many times to find which centroids are best
             for _ in range(self.max_iterations * 3):
+                # K means++
                 self.centroids = np.zeros((2, 2), dtype='float64')
                 index = np.random.choice(n)
                 self.centroids[0, :] = X_num[index]
