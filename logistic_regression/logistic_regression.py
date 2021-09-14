@@ -29,18 +29,25 @@ class LogisticRegression:
         X_num = X.to_numpy()
         y_num = y.to_numpy()
         m = X_num.shape[0]
-        prob = self.h_parameterized(X)
+        prob = self.h(X)
 
-        error = np.mean(prob - y_num)
-        print(error)
-        diff = np.array(self.alpha * error * (np.mean(X_num, axis=0)))[np.newaxis]
-        self.W -= diff.T
-        self.b -= self.alpha * error * self.b
+        # error = np.mean(prob - y_num)
+        #         # print(error)
+        #         # diff = np.array(self.alpha * error * (np.mean(X_num, axis=0)))[np.newaxis]
+        #         # self.W -= diff.T
+        #         # self.b -= self.alpha * error * self.b
+
+        print((prob - y_num).shape)
+        print(X_num.shape)
+
+        self.W -= (self.alpha / m) * np.dot(X_num.T, (prob - y_num).T)
+        self.b -= (self.alpha / m) * np.sum((prob - y_num))
+
 
     def h_parameterized(self, X):
-        X_num = X.to_numpy()
-        result = np.zeros(X_num.shape[0], dtype='float64')
-        return X_num @ self.W + self.b
+            X_num = X.to_numpy()
+            result = np.zeros(X_num.shape[0], dtype='float64')
+            return X_num @ self.W + self.b
 
     def h(self, X):
         if isinstance(X, pd.DataFrame):
@@ -64,7 +71,7 @@ class LogisticRegression:
         print(self.b)
         print(self.W)
         print()
-        for _ in range(10):
+        for _ in range(50):
             self.gradient(X, y)
         print(self.b)
         print(self.W)
