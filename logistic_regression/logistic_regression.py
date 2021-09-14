@@ -6,56 +6,80 @@ import pandas as pd
 
 class LogisticRegression:
     
-    def __init__(self, alpha=1):
+    def __init__(self, alpha=1, circle=False):
         # NOTE: Feel free add any hyperparameters 
         # (with defaults) as you see fit
 
         # With only two features it can be written on the form:
         # Theta0 + Theta1*x1 + Theta2*x2
-        self.b = np.random.randn(1, 1)
-        self.W = np.random.randn(2, 1)
         self.alpha = alpha
+        self.circle = circle
+        self.b = np.random.randn(1, 1)
+        if self.circle:
+            self.W = np.array([[0.5]], dtype='float64')
+        else:
+            self.W = np.random.randn(2, 1)
 
-    def J(self, X, y):
-        X_num = X.to_numpy()
-        m = X_num.shape[0]
-        prob = self.h(X_num)
-
-        return - (1 / m) * np.sum(
-            y * np.log(prob) + (1 - y) * np.log(1 - prob)
-        )
+    # def J(self, X, y):
+    #     X_num = X.to_numpy()
+    #     m = X_num.shape[0]
+    #     prob = self.h(X_num)
+    #
+    #     return - (1 / m) * np.sum(
+    #         y * np.log(prob) + (1 - y) * np.log(1 - prob)
+    #     )
 
     def gradient(self, X, y):
         X_num = X.to_numpy()
         y_num = y.to_numpy()
         m = X_num.shape[0]
         prob = self.h(X)
-
+        # print(prob) # øker
+        # print(f'delta: {np.dot(X_num.T, (prob - y_num).T)}')
+        # print((prob - y_num).T) # øker
         # error = np.mean(prob - y_num)
         #         # print(error)
         #         # diff = np.array(self.alpha * error * (np.mean(X_num, axis=0)))[np.newaxis]
         #         # self.W -= diff.T
         #         # self.b -= self.alpha * error * self.b
-
-        print((prob - y_num).shape)
-        print(X_num.shape)
-
+        # print(self.W)
         self.W -= (self.alpha / m) * np.dot(X_num.T, (prob - y_num).T)
         self.b -= (self.alpha / m) * np.sum((prob - y_num))
 
 
-    def h_parameterized(self, X):
-            X_num = X.to_numpy()
-            result = np.zeros(X_num.shape[0], dtype='float64')
-            return X_num @ self.W + self.b
+    # def h_parameterized(self, X):
+    #         X_num = X.to_numpy()
+    #         return X_num @ self.W + self.b
+
+    def normalize(self, X):
+        X_num = X.to_numpy()
+        X_0_mean = np.mean(X_num[:, 0])
+        X_1_mean = np.mean(X_num[:, 1])
+        X_normalized = np.copy(X)
+        X_normalized[:, 0] -= X_0_mean
+        X_normalized[:, 1] -= X_1_mean
+        X_max = np.amax(X_normalized, axis=0)
+        X_min = np.amin(X_normalized, axis=0)
+        self.displacement = np.array([X_0_mean, X_1_mean], dtype='float')
+        self.ratio = X_max - X_min
+        X_normalized[:] /= self.ratio
+        return pd.DataFrame(X_normalized, columns=['x0', 'x1'])
 
     def h(self, X):
         if isinstance(X, pd.DataFrame):
             X_num = X.to_numpy()
         else:
             X_num = X
-        result = np.zeros(X_num.shape[0], dtype='float64')
         return np.sum(X_num @ self.W, axis=1) + self.b
+
+    def process_data(self, X):
+        if not self.circle:
+            return X
+        else:
+            X_processed = self.normalize(X).to_numpy()
+            X_processed = np.sqrt(np.sum(np.square(X_processed), axis=1))
+            X_processed = pd.DataFrame(X_processed, columns=['x0'])
+        return X_processed
 
     def fit(self, X, y):
         """
@@ -68,13 +92,9 @@ class LogisticRegression:
                 m binary 0.0/1.0 labels
         """
         # TODO: Implement
-        print(self.b)
-        print(self.W)
-        print()
-        for _ in range(50):
-            self.gradient(X, y)
-        print(self.b)
-        print(self.W)
+        X_processed = self.process_data(X)
+        for _ in range(200):
+            self.gradient(X_processed, y)
 
     def predict(self, X):
         """
@@ -91,8 +111,7 @@ class LogisticRegression:
             with probability-like predictions
         """
         # TODO: Implement
-        print(self.h(X).shape)
-        return self.h(X)[0]
+        return self.h(self.process_data(X))[0]
         
 
         
@@ -109,8 +128,6 @@ def binary_accuracy(y_true, y_pred, threshold=0.5):
     Returns:
         The average number of correct predictions
     """
-    print(y_true.shape)
-    print(y_pred.shape)
     assert y_true.shape == y_pred.shape
     y_pred_thresholded = (y_pred >= threshold).astype(float)
     correct_predictions = y_pred_thresholded == y_true 
