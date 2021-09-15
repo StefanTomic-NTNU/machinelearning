@@ -6,7 +6,7 @@ import pandas as pd
 
 class LogisticRegression:
     
-    def __init__(self, alpha=1, circle=False):
+    def __init__(self, alpha=1, max_iterations=500, circle=False):
         # NOTE: Feel free add any hyperparameters 
         # (with defaults) as you see fit
 
@@ -15,6 +15,7 @@ class LogisticRegression:
         # can be written on the form:
         # b + W[0]*x1 + W[1]*x2
         self.alpha = alpha
+        self.max_iterations = max_iterations
         self.circle = circle
         self.b = np.random.randn(1, 1)
         if self.circle:
@@ -22,36 +23,13 @@ class LogisticRegression:
         else:
             self.W = np.random.randn(2, 1)
 
-    # def J(self, X, y):
-    #     X_num = X.to_numpy()
-    #     m = X_num.shape[0]
-    #     prob = self.h(X_num)
-    #
-    #     return - (1 / m) * np.sum(
-    #         y * np.log(prob) + (1 - y) * np.log(1 - prob)
-    #     )
-
-    def gradient(self, X, y):
+    def gradient_descent(self, X, y):
         X_num = X.to_numpy()
         y_num = y.to_numpy()
         m = X_num.shape[0]
         prob = self.h(X)
-        # print(prob) # øker
-        # print(f'delta: {np.dot(X_num.T, (prob - y_num).T)}')
-        # print((prob - y_num).T) # øker
-        # error = np.mean(prob - y_num)
-        #         # print(error)
-        #         # diff = np.array(self.alpha * error * (np.mean(X_num, axis=0)))[np.newaxis]
-        #         # self.W -= diff.T
-        #         # self.b -= self.alpha * error * self.b
-        # print(self.W)
         self.W -= (self.alpha / m) * np.dot(X_num.T, (prob - y_num).T)
         self.b -= (self.alpha / m) * np.sum(prob - y_num)
-
-
-    # def h_parameterized(self, X):
-    #         X_num = X.to_numpy()
-    #         return X_num @ self.W + self.b
 
     def normalize(self, X):
         X_num = X.to_numpy()
@@ -74,14 +52,14 @@ class LogisticRegression:
             X_num = X
         return np.sum(X_num @ self.W, axis=1) + self.b
 
-    def process_data(self, X):
+    def preprocess_data(self, X):
         if not self.circle:
             return X
         else:
-            X_processed = self.normalize(X).to_numpy()
-            X_processed = np.sqrt(np.sum(np.square(X_processed), axis=1))
-            X_processed = pd.DataFrame(X_processed, columns=['x0'])
-        return X_processed
+            X_preprocessed = self.normalize(X).to_numpy()
+            X_preprocessed = np.sqrt(np.sum(np.square(X_preprocessed), axis=1))
+            X_preprocessed = pd.DataFrame(X_preprocessed, columns=['x0'])
+        return X_preprocessed
 
     def fit(self, X, y):
         """
@@ -93,10 +71,9 @@ class LogisticRegression:
             y (array<m>): a vector of floats containing 
                 m binary 0.0/1.0 labels
         """
-        # TODO: Implement
-        X_processed = self.process_data(X)
-        for _ in range(750):
-            self.gradient(X_processed, y)
+        X_preprocessed = self.preprocess_data(X)
+        for _ in range(self.max_iterations):
+            self.gradient_descent(X_preprocessed, y)
 
     def predict(self, X):
         """
@@ -112,8 +89,7 @@ class LogisticRegression:
             A length m array of floats in the range [0, 1]
             with probability-like predictions
         """
-        # TODO: Implement
-        return self.h(self.process_data(X))[0]
+        return self.h(self.preprocess_data(X))[0]
         
 
         

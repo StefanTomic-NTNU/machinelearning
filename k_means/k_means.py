@@ -43,7 +43,6 @@ class KMeans:
             X (array<m,n>): a matrix of floats with
                 m rows (#samples) and n columns (#features)
         """
-        # TODO: Implement
         n = X.shape[0]
         if self.normalize_points:
             X_norm  = self.normalize(X)
@@ -130,7 +129,6 @@ class KMeans:
             there are 3 clusters, then a possible assignment
             could be: array([2, 0, 0, 1, 2, 1, 1, 0, 2, 2])
         """
-        # TODO: Implement
         if self.normalize_points:
             self.centroids -= self.displacement
             self.centroids /= self.ratio
@@ -156,7 +154,6 @@ class KMeans:
             [xm_1, xm_2, ..., xm_n]
         ])
         """
-        # TODO: Implement 
         return self.centroids
     
     
