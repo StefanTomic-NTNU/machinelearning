@@ -10,13 +10,15 @@ class LogisticRegression:
         # NOTE: Feel free add any hyperparameters 
         # (with defaults) as you see fit
 
-        # With only two features it can be written on the form:
+        # With two features:
         # Theta0 + Theta1*x1 + Theta2*x2
+        # can be written on the form:
+        # b + W[0]*x1 + W[1]*x2
         self.alpha = alpha
         self.circle = circle
         self.b = np.random.randn(1, 1)
         if self.circle:
-            self.W = np.array([[0.5]], dtype='float64')
+            self.W = np.random.randn(1, 1)
         else:
             self.W = np.random.randn(2, 1)
 
@@ -44,7 +46,7 @@ class LogisticRegression:
         #         # self.b -= self.alpha * error * self.b
         # print(self.W)
         self.W -= (self.alpha / m) * np.dot(X_num.T, (prob - y_num).T)
-        self.b -= (self.alpha / m) * np.sum((prob - y_num))
+        self.b -= (self.alpha / m) * np.sum(prob - y_num)
 
 
     # def h_parameterized(self, X):
@@ -93,7 +95,7 @@ class LogisticRegression:
         """
         # TODO: Implement
         X_processed = self.process_data(X)
-        for _ in range(200):
+        for _ in range(750):
             self.gradient(X_processed, y)
 
     def predict(self, X):
